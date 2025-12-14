@@ -26,23 +26,34 @@ class GoogleMapsScraper:
         self.driver = webdriver.Chrome(options=chrome_options)
         return self.driver
     
-    def scroll_results(self, iterations=15):
-        """Auto-scroll the results feed to load more places"""
+    def scroll_results(self, max_wait=60):
+        """Scroll until 'You've reached the end of the list.' appears or no new results load for a while."""
         try:
-            # Find the scrollable results panel
-            scrollable_div = self.driver.find_element(
-                By.CSS_SELECTOR, 
-                'div[role="feed"]'
-            )
-            
-            for i in range(iterations):
-                # Scroll to bottom of the div
-                self.driver.execute_script(
-                    'arguments[0].scrollTo(0, arguments[0].scrollHeight)', 
-                    scrollable_div
-                )
-                time.sleep(0.5)  # Wait for content to load
-                
+            scrollable_div = self.driver.find_element(By.CSS_SELECTOR, 'div[role="feed"]')
+            last_height = 0
+            start_time = time.time()
+            while True:
+                # Scroll to bottom
+                self.driver.execute_script('arguments[0].scrollTo(0, arguments[0].scrollHeight)', scrollable_div)
+                time.sleep(0.7)
+                # Check for end-of-list message
+                try:
+                    end_elem = self.driver.find_element(By.XPATH, "//*[contains(text(), \"You've reached the end of the list.\")]")
+                    if end_elem.is_displayed():
+                        print("Reached end of list message.")
+                        break
+                except NoSuchElementException:
+                    pass
+                # Check if new results loaded
+                new_height = self.driver.execute_script('return arguments[0].scrollHeight', scrollable_div)
+                if new_height == last_height:
+                    # If no new results for a while, stop
+                    if time.time() - start_time > max_wait:
+                        print("No new results loaded for a while. Stopping scroll.")
+                        break
+                else:
+                    last_height = new_height
+                    start_time = time.time()  # Reset timer if new results
         except NoSuchElementException:
             print("Could not find scrollable results feed")
     
@@ -155,7 +166,7 @@ class GoogleMapsScraper:
                 return places
             
             # Scroll to load more results
-            self.scroll_results(iterations=15)
+            self.scroll_results()
             
             # Wait a bit for final content to settle
             time.sleep(1)
@@ -179,20 +190,15 @@ class GoogleMapsScraper:
             print(f"Found {len(place_urls)} unique places to scrape")
             
             # Navigate to each place URL and extract detailed information
-            for i, url in enumerate(place_urls[:40]):  # Limit to first 40 to avoid timeout
+            for i, url in enumerate(place_urls):
                 try:
-                    # Navigate directly to the place
                     self.driver.get(url)
-                    time.sleep(1.5)  # Wait for details to load
-                    
-                    # Extract detailed data
+                    time.sleep(1.5)
                     place_data = self.extract_place_data_from_details()
-                    
                     if place_data.get("title"):
                         place = Place(**place_data)
                         places.append(place)
-                        print(f"Scraped {i+1}/{len(place_urls[:100])}: {place.title}")
-                    
+                        print(f"Scraped {i+1}/{len(place_urls)}: {place.title}")
                 except Exception as e:
                     print(f"Error processing place {i+1}: {e}")
                     continue
