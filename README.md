@@ -36,7 +36,11 @@ A REST API built with Python that extracts business and place information from G
 - **CORS** support for cross-origin requests
 - **Headless Chrome** automation using Selenium
 - **Structured data extraction** (rating, reviews, address, phone, website)
-- **Auto-scrolls** results feed (15 iterations)
+- **Multiple scraping iterations** — Runs 10 scraping passes for comprehensive data collection
+- **Auto-scrolls** results feed until end of list or timeout
+- **JSON output storage** — Saves each iteration (response1.json - response10.json)
+- **Smart deduplication** — Creates response_final.json with unique places by title + address
+- **Data merging** — Fills missing fields from duplicate entries
 - **Type-safe** with Pydantic models
 
 
@@ -92,10 +96,17 @@ curl http://localhost:3000/
 ```
 
 ### `GET /api/scrape`
-Scrape Google Maps for places
+Scrape Google Maps for places with multiple iterations for comprehensive data
 
 **Parameters:**
 - `query` (required): Search term
+
+**Behavior:**
+- Runs **10 scraping iterations** to collect comprehensive data
+- Saves each iteration to `Output/<query>/responseN.json` (response1.json through response10.json)
+- Creates `response_final.json` with **deduplicated unique places**
+- Deduplication uses title + address as unique identifier
+- Merges missing data from duplicate entries across iterations
 
 **Example:**
 ```bash
@@ -103,6 +114,7 @@ curl "http://localhost:3000/api/scrape?query=restaurants+in+NYC"
 ```
 
 **Response:**
+Returns the final deduplicated results (same as response_final.json):
 ```json
 {
   "query": "restaurants in NYC",
@@ -121,6 +133,11 @@ curl "http://localhost:3000/api/scrape?query=restaurants+in+NYC"
 }
 ```
 
+**Output Files:**
+All scraping results are saved to `Output/<query>/`:
+- `response1.json` through `response10.json` — Individual iteration results
+- `response_final.json` — Deduplicated final results
+
 ### Interactive API Documentation
 
 - **Swagger UI**: [http://localhost:3000/docs](http://localhost:3000/docs)
@@ -137,7 +154,11 @@ google-maps-scrapper/
 ├── models.py         # Pydantic data models
 ├── requirements.txt  # Python dependencies
 ├── LICENSE.txt       # Custom MIT-based license
-└── README.md         # This file
+├── README.md         # This file
+└── Output/           # Scraped data output directory
+    └── <query>/      # One folder per search query
+        ├── response1.json through response10.json
+        └── response_final.json  # Deduplicated results
 ```
 
 
@@ -158,9 +179,13 @@ Each place includes:
 
 ## ℹ️ Notes
 
-- The scraper performs 15 scroll iterations to load more results
+- The scraper runs **10 complete iterations** for each query to ensure comprehensive data collection
+- Each iteration scrolls until reaching "end of list" message or 60-second timeout
+- Scraping may take **2-10 minutes** depending on results count and iterations
+- Results are deduplicated using title + address combination
+- Missing fields from duplicates are merged into final results
 - Some fields may be `null` if not available on Google Maps
-- Scraping may take 10-30 seconds depending on results count
+- All results are saved to `Output/<query>/` directory with individual iteration files
 - Google Maps' HTML structure may change, requiring scraper updates
 
 
