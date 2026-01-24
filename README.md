@@ -57,21 +57,56 @@ A REST API built with Python that extracts business and place information from G
 ### Prerequisites
 
 - Python 3.10 or higher
-- Chrome/Chromium browser installed
+- Google Chrome browser installed
+- **cURL** (for testing endpoints)
+- **ChromeDriver** (for Selenium automation)
 
-### Setup
+### 1. Install System Tools (cURL)
 
-1. **Install dependencies:**
+**macOS / Linux:**
+Most systems have cURL pre-installed. Verify with:
+```bash
+curl --version
+```
+If missing:
+- **macOS:** `brew install curl`
+- **Linux (Ubuntu/Debian):** `sudo apt-get install curl`
+
+**Windows:**
+Windows 10/11 has cURL installed by default. Verify in PowerShell/Command Prompt:
+```bash
+curl --version
+```
+If missing, download from [curl.se/windows](https://curl.se/windows/) and add to PATH.
+
+### 2. Install ChromeDriver
+
+**Important:** The ChromeDriver version must match your installed Google Chrome version. Check your Chrome version at `chrome://settings/help`.
+
+**macOS:**
+```bash
+# Using Homebrew
+brew install --cask chromedriver
+
+# If macOS blocks execution, remove quarantine attribute:
+# xattr -d com.apple.quarantine /usr/local/bin/chromedriver
+```
+
+**Windows:**
+1. Download the version matching your Chrome from [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/) or [chromedriver.chromium.org](https://chromedriver.chromium.org/downloads).
+2. Unzip the file.
+3. Move `chromedriver.exe` to a folder (e.g., `C:\WebDriver\bin`).
+4. Add that folder to your System PATH:
+   - Search "Edit the system environment variables" -> Environment Variables.
+   - Under "System variables", select "Path" -> Edit -> New.
+   - Paste the path to your folder (e.g., `C:\WebDriver\bin`).
+
+### 3. Setup Project
+
+1. **Install Python dependencies:**
   ```bash
   pip install -r requirements.txt
   ```
-
-2. **Install ChromeDriver:**
-  - On macOS (using Homebrew):
-    ```bash
-    brew install chromedriver
-    ```
-  - Or download manually from: [chromedriver.chromium.org](https://chromedriver.chromium.org/)
 
 
 ## 🚦 Usage
